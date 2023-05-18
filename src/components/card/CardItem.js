@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Image, View, Text, Modal } from 'react-native'
+import { Image, View, Text, Modal, ActivityIndicator } from 'react-native'
 
 import Feather from 'react-native-vector-icons/Feather'
 import cardStyles from './cardStyles'
@@ -10,21 +10,44 @@ import { Searchbar } from 'react-native-paper'
 import { BaseColors } from '../../utils/BaseColors'
 import { filterOption } from '../../assets/data/FilterOption'
 import CheckBox from '../checkbox/Checkbox'
-import moment from 'moment'
-import Popup from '../modal/Popup'
+import { useNavigation } from '@react-navigation/native'
+import { useDispatch, useSelector } from 'react-redux'
+import {
+  fetchUsers,
+  selectUsers,
+  selectLoading,
+  page
+} from '../../stores/users.reducer'
 
 function CardItem(props) {
+  const navigation = useNavigation()
+  const dispatch = useDispatch()
+  // const userDetails = useSelector(state => state.usersData)
   const [dataList, setDataList] = useState([])
+  const users = useSelector(selectUsers)
+  const loading = useSelector(selectLoading)
+  const [page, setPage] = useState(1)
   const [selectedFilter, setSelectedFilter] = useState()
   const [isMenuVisible, setIsMenuVisible] = useState(false)
-  const [modalVisible, setModalVisible] = useState(false)
-  const [activeItem, setActiveItem] = useState(null)
   const toggleMenuSwitch = () => {
     setIsMenuVisible(!isMenuVisible)
   }
+
   useEffect(() => {
-    setDataList(props?.data)
+    setDataList(props?.data?.userData?.data)
   }, [props.data])
+
+  const handleLoadMore = () => {
+    if (props?.data?.userData?.page !== props?.data?.userData?.total_pages) {
+      setPage(page + 1)
+    }
+  }
+
+  useEffect(() => {
+    if (page > 1) {
+      dispatch(fetchUsers({ page: page, per_page: 4 }))
+    }
+  }, [page])
 
   const onChange = debounce(async val => {
     searchDetails(val)
@@ -33,40 +56,45 @@ function CardItem(props) {
   const searchDetails = async (val = '') => {
     const text = val.toLowerCase()
     const data = props?.data.filter(data => {
-      return data['im:artist'].label.toLowerCase().match(text)
+      return (
+        data?.first_name.toLowerCase().match(text) ||
+        data?.last_name.toLowerCase().match(text)
+      )
     })
     setDataList(data)
   }
 
-  const sortAbumList = () => {
+  const sortUsersList = () => {
     const temp = [...dataList]
     if (selectedFilter === 0) {
-      let sortedByPrice = temp.sort((a, b) =>
-        Number(a['im:price'].attributes.amount) >
-        Number(b['im:price'].attributes.amount)
-          ? 1
-          : -1
+      let sortedByID = temp.sort((a, b) =>
+        Number(a?.id) > Number(b?.id) ? 1 : -1
       )
-      setDataList(sortedByPrice)
+      setDataList(sortedByID)
     } else if (selectedFilter == 1) {
-      const sortedByArtist = temp.sort((a, b) => {
-        return a['im:artist'].label.localeCompare(b['im:artist'].label)
+      const sortedByName = temp.sort((a, b) => {
+        return a?.first_name.localeCompare(b?.first_name)
       })
-      setDataList(sortedByArtist)
+      setDataList(sortedByName)
     } else if (selectedFilter == 2) {
-      const sortedByReleaseDate = temp.sort((a, b) => {
-        return a['im:releaseDate'].label.localeCompare(
-          b['im:releaseDate'].label
-        )
+      const sortedByEmail = temp.sort((a, b) => {
+        return a?.email.localeCompare(b?.email)
       })
-      setDataList(sortedByReleaseDate)
+      setDataList(sortedByEmail)
     }
     setIsMenuVisible(false)
   }
 
   const onPress = item => {
-    setActiveItem(item)
-    setModalVisible(!modalVisible)
+    navigation.navigate('UserDetails', { id: item?.item?.id })
+  }
+
+  const renderFooter = () => {
+    return loading ? (
+      <View style={cardStyles.footer}>
+        <ActivityIndicator size="large" />
+      </View>
+    ) : null
   }
 
   function renderItem(item) {
@@ -76,35 +104,33 @@ function CardItem(props) {
           <View style={cardStyles.mainFrame}>
             <View style={cardStyles.col1}>
               <Image
-                source={{ uri: item?.item['im:image'][0].label }}
+                source={{ uri: item?.item?.avatar }}
                 style={cardStyles.imgStyle}
               />
             </View>
             <View style={cardStyles.col2}>
               <View style={cardStyles.detail}>
-                <Text style={cardStyles.title}>Song: </Text>
+                <Text style={cardStyles.title}>User Id: </Text>
                 <Text numberOfLines={1} style={cardStyles.subtitle}>
-                  {item?.item?.['im:name']?.label}
+                  {item?.item?.id}
                 </Text>
               </View>
               <View style={cardStyles.detail}>
-                <Text style={cardStyles.title}>Artist: </Text>
+                <Text style={cardStyles.title}>First Name: </Text>
                 <Text numberOfLines={1} style={cardStyles.subtitle}>
-                  {item?.item?.['im:artist']?.label}
+                  {item?.item?.first_name}
                 </Text>
               </View>
               <View style={cardStyles.detail}>
-                <Text style={cardStyles.title}>Price: </Text>
+                <Text style={cardStyles.title}>Last Name: </Text>
                 <Text numberOfLines={1} style={cardStyles.subtitle}>
-                  {item?.item?.['im:price'].label}
+                  {item?.item?.last_name}
                 </Text>
               </View>
               <View style={cardStyles.detail}>
-                <Text style={cardStyles.title}>Release Date: </Text>
+                <Text style={cardStyles.title}>Email: </Text>
                 <Text numberOfLines={1} style={cardStyles.subtitle}>
-                  {moment(item?.item?.['im:releaseDate'].label).format(
-                    'DD-MMM-yyyy'
-                  )}
+                  {item?.item?.email}
                 </Text>
               </View>
             </View>
@@ -133,16 +159,13 @@ function CardItem(props) {
         />
       </View>
       <FlatList
-        data={dataList}
+        data={users}
+        keyExtractor={item => item.id.toString()}
         showsVerticalScrollIndicator={false}
         renderItem={renderItem}
-        extraData={dataList}
-        scrollsToTop
-      />
-      <Popup
-        modalVisible={modalVisible}
-        setModalVisible={setModalVisible}
-        activeItem={activeItem}
+        onEndReached={handleLoadMore}
+        onEndReachedThreshold={0.1}
+        ListFooterComponent={renderFooter}
       />
 
       {isMenuVisible ? (
@@ -176,7 +199,7 @@ function CardItem(props) {
                     </View>
                   ))}
                 </View>
-                <TouchableOpacity onPress={sortAbumList}>
+                <TouchableOpacity onPress={sortUsersList}>
                   <Text style={cardStyles.buttonstyle}>Apply</Text>
                 </TouchableOpacity>
               </View>

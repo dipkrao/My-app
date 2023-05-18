@@ -1,16 +1,16 @@
 export const filterOption = [
   {
-    title: 'Price',
+    title: 'Id',
     value: 0,
     checked: false
   },
   {
-    title: 'Artist',
+    title: 'Name',
     value: 1,
     checked: false
   },
   {
-    title: 'Release Date',
+    title: 'Email',
     value: 2,
     checked: false
   }

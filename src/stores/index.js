@@ -1,8 +1,8 @@
 import { configureStore } from '@reduxjs/toolkit'
-import albumReducer from './album.reducer'
+import usersReducer from './users.reducer'
 
 export const store = configureStore({
   reducer: {
-    albumData: albumReducer
+    usersData: usersReducer
   }
 })

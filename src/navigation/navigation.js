@@ -6,7 +6,8 @@ import Home from '../screens/Home/Home.screen'
 import Profile from '../screens/Profile/Profile.screen'
 import Icon from 'react-native-vector-icons/Ionicons'
 import { useDispatch } from 'react-redux'
-import { fetchAlbum } from '../stores/album.reducer'
+import { fetchUsers } from '../stores/users.reducer'
+import UserDetails from '../screens/UserDetail/UserDetails.screen'
 
 const Stack = createNativeStackNavigator()
 const Tab = createBottomTabNavigator()
@@ -15,7 +16,7 @@ function MyTabs() {
   const dispatch = useDispatch()
 
   useEffect(() => {
-    dispatch(fetchAlbum())
+    dispatch(fetchUsers({ page: 1, per_page: 4 }))
   }, [dispatch])
 
   return (
@@ -52,6 +53,11 @@ const MainNavigation = () => {
           name="HomeBase"
           options={{ headerShown: false }}
           component={MyTabs}
+        />
+        <Stack.Screen
+          name="UserDetails"
+          options={{ headerShown: false }}
+          component={UserDetails}
         />
         {/* add your another screen here using -> Stack.Screen */}
       </Stack.Navigator>

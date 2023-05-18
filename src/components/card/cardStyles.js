@@ -32,10 +32,10 @@ export default StyleSheet.create({
     Colors: BaseColors.darkGrey
   },
   col1: {
-    width: '50%',
+    width: '40%',
     marginRight: 10
   },
-  col2: { width: '50%', alignSelf: 'flex-start' },
+  col2: { width: '60%', alignSelf: 'flex-start' },
   detail: {
     padding: 5,
     paddingBottom: 0,
@@ -115,5 +115,10 @@ export default StyleSheet.create({
     height: 300,
     width: '80%',
     backgroundColor: BaseColors.white
+  },
+  footer: {
+    marginTop: 20,
+    marginBottom: 30,
+    alignItems: 'center'
   }
 })
